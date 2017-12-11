@@ -99,7 +99,7 @@ def telemetry(sid, data):
         fps = frame_counter
         frame_counter = 0
         second_counter = time.time()
-    print("Current FPS: {}".format(fps))
+    # print("Current FPS: {}".format(fps))
 
     if data:
         global Rover
@@ -150,7 +150,7 @@ def telemetry(sid, data):
 
 @sio.on('connect')
 def connect(sid, environ):
-    print("connect ", sid)
+    #print("connect ", sid)
     send_control((0, 0, 0), '', '')
     sample_data = {}
     sio.emit(
