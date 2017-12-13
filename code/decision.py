@@ -5,7 +5,7 @@ import numpy as np
 # commands based on the output of the perception_step() function
 def decision_step(rover):
 
-    print("Rover mode is " + rover.mode)
+    print("Rover is " + rover.mode)
     # Implement conditionals to decide what to do given perception data
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
@@ -17,7 +17,7 @@ def decision_step(rover):
         if rover.mode == 'forward':
             # Check the extent of navigable terrain
             if len(rover.nav_angles) >= rover.stop_forward:
-                # If mode is forward, navigable terrain looks good 
+                # If mode is forward, navigable terrain looks good
                 # and velocity is below max, then throttle 
                 if rover.vel < rover.max_vel:
                     # Set throttle value to throttle setting
@@ -61,7 +61,7 @@ def decision_step(rover):
                     # Set steer to mean angle
                     rover.steer = np.clip(np.mean(rover.nav_angles * 180 / np.pi), -15, 15)
                     rover.mode = 'forward'
-    # Just to make the rover do something 
+    # Just to make the rover do something
     # even if no modifications have been made to the code
     else:
         rover.throttle = rover.throttle_set
