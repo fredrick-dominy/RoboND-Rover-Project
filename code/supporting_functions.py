@@ -71,20 +71,20 @@ def update_rover(rover, data):
 # Define a function to create display output given worldmap results
 def create_output_images(Rover):
     # Create a scaled map for plotting and clean up obs/nav pixels a bit
-    if np.max(Rover.worldmap[:, :, 2]) > 0:
-        nav_pix = Rover.worldmap[:, :, 2] > 0
-        navigable = Rover.worldmap[:, :, 2] * (255 / np.mean(Rover.worldmap[nav_pix, 2]))
+    if np.max(Rover.world_map[:, :, 2]) > 0:
+        nav_pix = Rover.world_map[:, :, 2] > 0
+        navigable = Rover.world_map[:, :, 2] * (255 / np.mean(Rover.world_map[nav_pix, 2]))
     else:
-        navigable = Rover.worldmap[:, :, 2]
-    if np.max(Rover.worldmap[:, :, 0]) > 0:
-        obs_pix = Rover.worldmap[:, :, 0] > 0
-        obstacle = Rover.worldmap[:, :, 0] * (255 / np.mean(Rover.worldmap[obs_pix, 0]))
+        navigable = Rover.world_map[:, :, 2]
+    if np.max(Rover.world_map[:, :, 0]) > 0:
+        obs_pix = Rover.world_map[:, :, 0] > 0
+        obstacle = Rover.world_map[:, :, 0] * (255 / np.mean(Rover.world_map[obs_pix, 0]))
     else:
-        obstacle = Rover.worldmap[:, :, 0]
+        obstacle = Rover.world_map[:, :, 0]
 
     likely_nav = navigable >= obstacle
     obstacle[likely_nav] = 0
-    plotmap = np.zeros_like(Rover.worldmap)
+    plotmap = np.zeros_like(Rover.world_map)
     plotmap[:, :, 0] = obstacle
     plotmap[:, :, 2] = navigable
     plotmap = plotmap.clip(0, 255)
@@ -92,7 +92,7 @@ def create_output_images(Rover):
     map_add = cv2.addWeighted(plotmap, 1, Rover.ground_truth, 0.5, 0)
 
     # Check whether any rock detections are present in worldmap
-    rock_world_pos = Rover.worldmap[:, :, 1].nonzero()
+    rock_world_pos = Rover.world_map[:, :, 1].nonzero()
     # If there are, we'll step through the known sample positions
     # to confirm whether detections are real
     samples_located = 0
