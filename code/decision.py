@@ -19,6 +19,9 @@ def decision_step(rover):
         if rover.mode == 'mapping_spin':
             mapping_spin(rover)
 
+        elif rover.mode == 'stop_and_pause':
+            stop_and_pause_mode(rover)
+
         elif rover.mode == 'forward':
             forward_mode(rover)
 
@@ -35,32 +38,38 @@ def decision_step(rover):
             print("WE ARE STUCK!!!")
             reverse_mode(rover)
     else:
-        accelerate(rover)
-        rover.mode == 'forward'
+        print('Mode fell through to default, forward. (Nav_angles was NaN)')
+        rover.mode = 'forward'
 
     return rover
 
 
 def forward_mode(rover):
+    total_angles = len(rover.nav_angles)
+    total_rock_angles = len(rover.rock_angles)
+
     # Check the extent of navigable terrain
-    if len(rover.rock_angles) >= 10:
+    if total_rock_angles >= 10:
         rover.mode = 'prospect'
-    elif len(rover.nav_angles) >= rover.stop_forward:
+    elif total_angles >= rover.stop_forward:
         # If mode is forward, navigable terrain looks good
         # and velocity is below max, then throttle
         set_speed(rover, 1.5)
-        steer(rover)
+        master_steer(rover, 'nav', -12, 12, -6)
+
+        print(total_angles)
 
         # After a period with no velocity, flip into reverse mode.
         if rover.vel < 0.2:
-            counter_delay(rover, 153, 'reverse')
+            counter_delay(rover, 150, 'reverse')
 
     # If there's a lack of navigable terrain pixels then go to 'stop' mode
-    elif len(rover.nav_angles) < rover.stop_forward:
+    elif total_angles < rover.stop_forward:
         # Set mode to "stop" and hit the brakes!
         print("hitting the brake 1")
+
         stop(rover)
-        steer(rover)
+        master_steer(rover, 'nav', -5, 8, -3)
         rover.mode = 'stop'
 
     return rover
@@ -102,19 +111,19 @@ def prospect_mode(rover):
         if len(rover.rock_angles) > 0:
             print("move toward sample until it is within reach - vel is ", rover.vel)
             set_speed(rover, 0.4)
-            if rover.vel > 0.4:
+            if rover.vel > 0.5:
                 print("Coast Rover")
-                steer_high_speed_to_rock(rover)
+                master_steer(rover, 'rock', -8, 8, 0)
 
-            elif rover.vel <= 0.4:
+            elif rover.vel <= 0.5:
                 print("Point Rover toward sample")
-                steer_low_speed_to_rock(rover)
+                master_steer(rover, 'rock', -15, 15, 0)
                 counter_delay(rover, 100, 'stop')
         else:
             print("lost the rock. Setting Idle and steering.")
             set_speed(rover, 0.4)
             steer_straight(rover)
-            counter_delay(rover, 350, 'reverse')
+            counter_delay(rover, 100, 'forward')
 
     return rover
 
@@ -122,33 +131,61 @@ def prospect_mode(rover):
 def mapping_spin(rover):
     # use rover.yaw to determine ending rotation
     # spin 60degrees and stop for a count of 10 6 times
-    print('rover total spin is ', rover.total_spin)
     if rover.vel < 0.2:
-        coast(rover)
+        # set_speed(rover, 0.15)
         map_spin(rover)
+
+        print('Rover.yaw is...', rover.yaw)
+        print('Rover.total_spin is ', rover.total_spin)
+        print('Rover.yaw_differential is ', rover.yaw_differential)
+        print('Rover.last_delta_rotation is ', rover.last_delta_rotation)
+
         if rover.first:
+            # First time this is called, set some initial variables.
             rover.total_spin = 0
+            rover.yaw_differential = rover.yaw
             rover.first = False
+            rover.last_delta_rotation = 0
+        elif rover.total_spin >= 350:
+            # When counter is
+            rover.first = True
+            rover.mode = 'forward'
         else:
-            absolute_difference = np.abs(rover.total_spin - rover.yaw)
-            rover.total_spin += np.int(absolute_difference)
+            set_total_spin(rover)
+            rover.last_delta_rotation = rover.total_spin
 
-            if rover.total_spin > 360:
-                rover.first = True
-                rover.mode = 'forward'
+            # Setting points to pause and map
+            first = 42 < rover.total_spin < 48
+            second = 132 < rover.total_spin < 138
+            third = 212 < rover.total_spin < 218
+            fourth = 302 < rover.total_spin < 308
+
+            if rover.spin_map_performed:
+                coast(rover)
+                map_spin(rover)
+                rover.spin_map_performed = False
             else:
-                sixty = 55 < rover.total_spin < 65
-                one_twenty = 115 < rover.total_spin < 125
-                one_eighty = 175 < rover.total_spin < 185
-                two_forty = 235 < rover.total_spin < 245
-                three_hundred = 295 < rover.total_spin < 305
-
-                if sixty or one_twenty or one_eighty or two_forty or three_hundred:
-                    print('At a hex point, mapping')
-                    stop(rover)
-                    counter_delay(rover, 10, 'mapping_spin')
+                if first or second or third or fourth:
+                    rover.spin_map_performed = True
+                    rover.mode = 'stop_and_pause'
+                else:
+                    coast(rover)
+                    map_spin(rover)
     else:
         stop(rover)
+
+
+def set_total_spin(rover):
+    # if differential is greater than the yaw then we've spun past 0
+    if rover.yaw < rover.yaw_differential:
+        print("spun past zero!")
+        absolute_spin_calc = np.abs(360 + rover.yaw - rover.yaw_differential)
+    else:
+        absolute_spin_calc = np.abs(rover.yaw - rover.yaw_differential)
+
+    # difference in yaw of last frame and current frame.
+    spin_increment = (np.int(absolute_spin_calc) - rover.last_delta_rotation)
+    rover.total_spin += spin_increment
 
 
 def set_speed(rover, limit):
@@ -158,10 +195,16 @@ def set_speed(rover, limit):
         coast(rover)
 
 
+def stop_and_pause_mode(rover):
+    set_speed(rover, 0.1)
+    # stop(rover)
+    counter_delay(rover, 20, 'mapping_spin')
+
+
 def reverse_mode(rover):
     reverse(rover)
     steer_straight(rover)
-    counter_delay(rover, 50, 'forward')
+    counter_delay(rover, 100, 'forward')
 
     return rover
 

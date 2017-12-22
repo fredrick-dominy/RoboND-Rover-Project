@@ -19,7 +19,7 @@ def accelerate(rover, limit):
     if rover.vel >= limit:
         rover.throttle = 0
     else:
-        rover.throttle = 0.4
+        rover.throttle = 0.24
 
 
 def reverse(rover):
@@ -28,43 +28,34 @@ def reverse(rover):
     rover.throttle = -0.4
 
 
-def steer_low_speed_to_rock(rover):
-    rover.steer = np.clip(np.mean(rover.rock_angles * 180 / np.pi), -15, 15)
+def master_steer(rover, type, neg_val, pos_val, adjust):
 
+    nav_type = rover.nav_angles
+    adjustment = adjust or 0
 
-def steer_high_speed_to_rock(rover):
-    rover.steer = np.clip(np.mean(rover.rock_angles * 180 / np.pi), -6, 6)
+    if type is 'rock':
+        nav_type = rover.rock_angles
 
-
-def steer(rover):
-    # set steering angle params to the mean of the available
-    print('Steering by nav angles')
-
-    steer_calculation = np.mean(rover.nav_angles * 180 / np.pi)
+    steer_calculation = np.mean(nav_type * 180 / np.pi)
     if np.isnan(steer_calculation):
         print('steer calc is NAN')
         rover.steer = 0
 
     else:
-        if rover.vel < 1.1:
+        if rover.vel < 1.0:
             rover.steer = np.clip(steer_calculation, -15, 15)
-            print('Steering angle set to ', rover.steer)
         else:
-            rover.steer = np.clip(steer_calculation, -5, 8) - 3
-            print('Steering angle set to ', rover.steer)
+            rover.steer = np.clip(steer_calculation, neg_val, pos_val) + adjustment
 
 
 def steer_straight(rover):
-    print('Steering angle is ZERO')
     rover.steer = 0
 
 
 def spin(rover):
     # when stopped, apply full rotation
-    print('Steering angle is SPIN (25)')
     rover.steer = 25  # Could be more clever here about which way to turn
 
 def map_spin(rover):
     # when stopped, apply full rotation
-    print('Steering angle is SPIN (25)')
     rover.steer = 25  # Could be more clever here about which way to turn

@@ -54,7 +54,10 @@ class RoverState():
         self.nav_angles = None  # Angles of navigable terrain pixels
         self.nav_dists = None  # Distances of navigable terrain pixels
         self.ground_truth = ground_truth_3d  # Ground truth worldmap
+
         self.mode = 'mapping_spin'  # Current mode (can be forward or stop)
+        # self.mode = 'forward'  # Current mode (can be forward or stop)
+
         self.throttle_set = 0.2  # Throttle setting when accelerating
         self.brake_set = 10  # Brake setting when braking
 
@@ -68,7 +71,7 @@ class RoverState():
         # when you can keep going and when you should stop.  Feel free to
         # get creative in adding new fields or modifying these!
         self.stop_forward = 50  # Threshold to initiate stopping
-        self.go_forward = 3000  # Threshold to go forward again
+        self.go_forward = 2000  # Threshold to go forward again
         self.max_vel = 1.5  # Maximum velocity (meters/second)
         # Image output from perception step
         # Update this image to display your intermediate analysis steps
@@ -89,6 +92,9 @@ class RoverState():
         # spin_map section
         self.first = True
         self.total_spin = 0
+        self.spin_map_performed = False
+        self.last_delta_rotation = 0
+        self.yaw_differential = 0
 
 
 # Initialize our rover

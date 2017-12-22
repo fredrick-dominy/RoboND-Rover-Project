@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import matplotlib.image as mpimg
 
 
 # Identify pixels above the threshold
@@ -139,6 +140,18 @@ def perception_step(rover):
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
     navigable_color_threshold = color_thresh(nav_perspective_transform)
 
+
+    mask = '../calibration_images/steer-mask.jpg'
+
+    mask_img = mpimg.imread(mask, 0)
+
+    def mask_application(img, maskim):
+        return cv2.bitwise_and(img, img, mask=maskim)
+
+
+    navigable_color_threshold = mask_application(navigable_color_threshold, mask_img)
+
+
     # navigable_blurred_image = blur_mask(navigable_color_threshold)
     obstacle_image = obstacle_thresh(navigable_color_threshold)
     rock_image = rock_thresh(nav_perspective_transform)
@@ -188,11 +201,14 @@ def perception_step(rover):
     )
 
     # 7) Update rover worldmap (to be displayed on right side of screen)
-    if rover.roll < 1 or rover.roll > 359:
-        if rover.steer < 3:
-            rover.world_map[obstacles_y_world, obstacles_x_world, 0] += 1
-            rover.world_map[rocks_y_world, rocks_x_world, 1] += 1
-            rover.world_map[navigable_y_world, navigable_x_world, 2] += 1
+    if rover.roll < 0.5 or rover.roll > 359.5:
+        if rover.pitch < 0.5 or rover.pitch > 359.5:
+            rover.world_map[obstacles_y_world, obstacles_x_world, 0] = 255
+            rover.world_map[rocks_y_world, rocks_x_world, 1] = 255
+            rover.world_map[navigable_y_world, navigable_x_world, 2] = 255
+
+    else:
+        print('NOT MAPPING!!!')
 
     # 8) Convert rover-centric pixel positions to polar coordinates
     # Update rover pixel distances and angles
